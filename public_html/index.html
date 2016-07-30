@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" ng-app="hackApp">
+<head>
+    <title></title>
+    <link href="Stylesheets/bootstrap.css" rel="stylesheet" />
+    <script src="Scripts/angular.js"></script>
+    <script src="Scripts/angular-resource.js"></script>
+    <script src="Scripts/jQuery.min.js"></script>
+    <script src="Scripts/Peity.min.js"></script>
+    <script src="script.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--[If lt IE 9]
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>-->
+
+</head>
+<body ng-controller="hackCtrl" class="container">
+    <table class="table-bordered table">
+        <tr class="text-primary">
+            <th class="col-xs-3">Localtime</th>
+            <th class="col-xs-2">Temperature</th>
+            <th class="col-xs-1">Humidity</th>
+            <th class="col-xs-2">Pressure</th>
+            <th class="col-xs-2">Luminosity</th>
+            <th class="col-xs-1">CO2</th>
+            <th class="col-xs-1">Sound</th>
+        </tr>
+        <tr ng-repeat="censor in censors">
+            <td>{{censor.localtime}}</td>
+            <td>{{censor.temperature}}</td>
+            <td>{{censor.humidity}}</td>
+            <td>{{censor.pressure}}</td>
+            <td>{{censor.luminosity}}</td>
+            <td>{{censor.co2}}</td>
+            <td>{{censor.sound}}</td>
+        </tr>
+    </table>
+    <button class="button" ng-click="convertCSV()">Click</button>
+    <div ng-show="clicked">
+        <span class="line">sparkline</span>
+    </div>
+</body>
+</html>
