@@ -3,8 +3,6 @@
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);
 
-$activehm = $_GET['hm'];
-
 $sensor_csv = '';//file_get_contents('../data/chch-sensors.csv');
 $slines = explode("\n",$sensor_csv);
 array_shift($slines);
@@ -56,13 +54,13 @@ $heatmaps = array(
 	array(
 		'name'=>'Temperature',
 		'icon'=>'sun-o',
-		'gradients' => getGradients('green','red')
+		'gradients' => getGradients('green','green')
 	),
 	'humidity' => 
 	array(
 		'name'=>'Humidity',
 		'icon'=>'tint',
-		'gradients' => getGradients('green','red')
+		'gradients' => getGradients('red','red')
 	),
 	'pressure' => 
 	array(
@@ -89,9 +87,6 @@ $heatmaps = array(
 		'gradients' => getGradients('green','red')
 	)
 );
-
-if(!$heatmaps[$activehm])$activehm = 'temperature';
-
 //print_r($heatmaps);
 //
 ?>
@@ -103,10 +98,16 @@ if(!$heatmaps[$activehm])$activehm = 'temperature';
 		<meta charset="utf-8">
 		<link rel="stylesheet" href="/css/app.css" />
 		<link rel="stylesheet" href="/css/font-awesome.css" />
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 	</head>
 	<body>
 		<div id="map"></div>
 		<script type="text/javascript">
+			var map;
+			var heatmap;
+			var hmids;
+			var activehm;
+			
 			function getFile(path, asynch, callback) {
 				var xhr = new XMLHttpRequest();
 				xhr.open("GET", path, asynch);
@@ -131,6 +132,9 @@ if(!$heatmaps[$activehm])$activehm = 'temperature';
 				console.log("Using api key: " + config.GOOGLE_MAPS_API_KEY);
 				loadScript("https://maps.googleapis.com/maps/api/js?key=" + config.GOOGLE_MAPS_API_KEY + "&libraries=drawing,visualization&callback=initMap");
 			});
+			
+			
+			
 			function initMap() {
 				map = new google.maps.Map(document.getElementById('map'), {
 				  center: {lat: -43.531403, lng: 172.631714},
@@ -139,26 +143,37 @@ if(!$heatmaps[$activehm])$activehm = 'temperature';
 				  streetViewControl: false
 				});
 				heatmap = [
-				<?php $slug = $activehm;
-					$hm = $heatmaps[$slug];
-					
+				<?php 
+				$i = 0;
+				foreach($heatmaps as $slug => $hm){
 					?>
 					new google.maps.visualization.HeatmapLayer({
-					  data: getKitePoints(),
-					  map: map,
+					  data: getKitePoints(<?php echo $i; ?>),
+					  map: null,
 					  radius: 30,
 					  gradient: ['<?php echo implode('\',\'',$hm['gradients']['pos']); ?>']
 					}),
 					new google.maps.visualization.HeatmapLayer({
-					  data: getKitePoints(),
+					  data: getKitePoints(<?php echo $i+1; ?>),
 					  map: null,
 					  radius: 30,
 					  gradient: ['<?php echo implode('\',\'',$hm['gradients']['neg']); ?>']
 					}),
 					<?php 
-				
+					$i+= 2;
+				}
 				?>
 				];
+				hmids = {
+				<?php 
+				$i=0;
+				foreach($heatmaps as $slug => $hm){
+					echo '"'.$slug.'": '.$i.',';
+					$i += 2;
+				}
+				?>
+				};
+				
 				var legend = document.createElement('div');
 				legend.id = 'legend';
 				var content = [];
@@ -166,7 +181,7 @@ if(!$heatmaps[$activehm])$activehm = 'temperature';
 				<?php
 				foreach($heatmaps as $key => $info){
 					$active = ($activehm == $key ? 'class="active"' : '');
-					echo "content.push('<a href=\"/?hm={$key}\" {$active}><i class=\"fa fa-{$info[icon]} fa-2x\"></i>{$info[name]}</a>');\n";
+					echo "content.push('<a href=\"#{$key}\" data-type=\"{$key}\" {$active}><i class=\"fa fa-{$info[icon]} fa-2x\"></i>{$info[name]}</a>');\n";
 				}
 				?>
 				content.push('</div>');
@@ -178,6 +193,11 @@ if(!$heatmaps[$activehm])$activehm = 'temperature';
 				title.id = 'title';
 				title.innerHTML = '<h1><b>SmartCity</b> Dashboard</h1>';
 				map.controls[google.maps.ControlPosition.LEFT_TOP].push(title);
+				window.location.hash = "";
+				$(window).on('hashchange', function(){
+					checkHash();
+				}).trigger('hashchange');
+				setTimeout(checkHash(),200);
 			}
 			function getKitePoints(id) {
 			return [
@@ -185,6 +205,22 @@ if(!$heatmaps[$activehm])$activehm = 'temperature';
 				  echo 'new google.maps.LatLng('.$kite['lat'].', '.$kite['long'].'),'."\n";
 			  }?>
 			 ];
+			}
+			
+			function checkHash(){
+				console.log(window.location.hash+" !");
+				//if(!window.location.hash)window.location.hash = "#temperature";
+				
+				var hash = window.location.hash.substring(1);
+				heatmap.forEach(function(item, index){
+					item.setMap(null);
+				});
+				$('.layertoggle a').removeClass('active');
+				console.log('.layertoggle a[data-type=\''+hash+'\']');
+				$('.layertoggle a[data-type=\''+hash+'\']').addClass('active');
+				heatmap[hmids[hash]].setMap(map);
+				heatmap[hmids[hash]+1].setMap(map);
+				
 			}
 			
 		</script>

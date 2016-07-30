@@ -60,8 +60,12 @@ body, .gm-style{
 	bottom:5px;
 	width:30px;
 }
-.layertoggle a:hover, .layertoggle a.active{
+.layertoggle a.active{
 	background:#7ca5c7;
+	color:#fff;
+}
+.layertoggle a:hover{
+	background:#8cb5d7;
 	color:#fff;
 }
 #legend {
