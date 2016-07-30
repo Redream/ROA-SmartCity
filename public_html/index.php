@@ -3,14 +3,50 @@
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);
 
-$sensor_csv = '';//file_get_contents('../data/chch-sensors.csv');
+$sensor_csv = file_get_contents('../data/chch-sensors.csv');
 $slines = explode("\n",$sensor_csv);
 array_shift($slines);
 $kites = array();
+$kitedata = array();
 
 foreach($slines as $line){
+	$fail = false;
 	if($line == '')continue;
 	$parts = explode(',',$line);
+	foreach($parts as $i => $part){
+		$parts[$i] = trim($part);
+		if($parts[$i] == -1){
+			$fail = true;
+			break;
+		}
+	}
+	if($fail)continue;
+	
+	$kitedata[$parts[1]] = array(
+		$parts[2],
+		$parts[3],
+		$parts[4],
+		$parts[5],
+		$parts[6],
+		$parts[7]
+	);
+}
+$kitemin = array();
+$kitemax = array();
+$first = true;
+
+foreach($kitedata as $kite => $data){
+	foreach($data as $k => $v){
+		if($v == 0)continue;
+		if($first || $kitemin[$k] == 0){
+			$kitemin[$k] = $v;
+			$kitemax[$k] = $v;
+		}else{
+			$kitemin[$k] = min($kitemin[$k], $v);
+			$kitemax[$k] = max($kitemax[$k], $v);
+		}
+	}
+	$first = false;
 }
 
 $csv_kites = file_get_contents('../data/kite-locations.csv');
@@ -41,54 +77,66 @@ function genGradient($type){
 				'rgba(255,255,255,1)'
 			);
 		break;
+		case 'blue':
+		return array(
+			'rgba(0, 255, 255, 0)',
+			'rgba(0, 255, 255, 1)',
+			'rgba(0, 191, 255, 1)',
+			'rgba(0, 127, 255, 1)',
+			'rgba(0, 63, 255, 1)',
+			'rgba(0, 0, 255, 1)',
+			'rgba(0, 0, 223, 1)',
+			'rgba(0, 0, 191, 1)',
+			'rgba(0, 0, 159, 1)',
+			'rgba(0, 0, 127, 1)'
+		);
+		break;
+		case 'default':
+			return false;
+		break;
 	}
 }
 
-
-function getGradients($type1, $type2){
-	return array('pos'=>genGradient($type1),'neg'=>genGradient($type2));
-}
 
 $heatmaps = array(
 	'temperature' => 
 	array(
 		'name'=>'Temperature',
 		'icon'=>'sun-o',
-		'gradients' => getGradients('green','green')
+		'gradient' => genGradient('default')
 	),
 	'humidity' => 
 	array(
 		'name'=>'Humidity',
 		'icon'=>'tint',
-		'gradients' => getGradients('red','red')
+		'gradient' => genGradient('blue')
 	),
 	'pressure' => 
 	array(
 		'name'=>'Pressure',
 		'icon'=>'tachometer',
-		'gradients' => getGradients('green','red')
+		'gradient' => genGradient('default')
 	),
 	'luminosity' => 
 	array(
 		'name'=>'Light Levels',
 		'icon'=>'lightbulb-o',
-		'gradients' => getGradients('green','red')
+		'gradient' => genGradient('default')
 	),
 	'co2' => 
 	array(
 		'name'=>'CO2 Levels',
 		'icon'=>'tree',
-		'gradients' => getGradients('green','red')
+		'gradient' => genGradient('default')
 	),
 	'sound' => 
 	array(
 		'name'=>'Noise Pollution',
 		'icon'=>'volume-up',
-		'gradients' => getGradients('green','red')
+		'gradient' => genGradient('default')
 	)
 );
-//print_r($heatmaps);
-//
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -151,16 +199,12 @@ $heatmaps = array(
 					  data: getKitePoints(<?php echo $i; ?>),
 					  map: null,
 					  radius: 30,
-					  gradient: ['<?php echo implode('\',\'',$hm['gradients']['pos']); ?>']
-					}),
-					new google.maps.visualization.HeatmapLayer({
-					  data: getKitePoints(<?php echo $i+1; ?>),
-					  map: null,
-					  radius: 30,
-					  gradient: ['<?php echo implode('\',\'',$hm['gradients']['neg']); ?>']
+					  <?php if($hm['gradient']){ ?>
+					  gradient: ['<?php echo implode('\',\'',$hm['gradient']); ?>']
+					  <?php } ?>
 					}),
 					<?php 
-					$i+= 2;
+					$i++;
 				}
 				?>
 				];
@@ -169,7 +213,7 @@ $heatmaps = array(
 				$i=0;
 				foreach($heatmaps as $slug => $hm){
 					echo '"'.$slug.'": '.$i.',';
-					$i += 2;
+					$i ++;
 				}
 				?>
 				};
@@ -200,11 +244,19 @@ $heatmaps = array(
 				setTimeout(checkHash(),200);
 			}
 			function getKitePoints(id) {
-			return [
-			  <?php foreach($kites as $kite){
-				  echo 'new google.maps.LatLng('.$kite['lat'].', '.$kite['long'].'),'."\n";
-			  }?>
+			kiteweights = [
+			  <?php 
+			  for($i=0;$i<count($heatmaps);$i++){
+				  echo '[';
+				  foreach($kitedata as $kite => $data){
+					  if($data[$i] == 0)continue;
+					  echo '{location: new google.maps.LatLng('.$kites[$kite]['lat'].', '.$kites[$kite]['long'].'), weight:'.max($data[$i]-$kitemin[$i]+($kitemax[$i]-$kitemin[$i])/2,0).'},'."\n";
+				  }
+				  echo '],';
+				 }
+			  ?>
 			 ];
+			return kiteweights[id];
 			}
 			
 			function checkHash(){
@@ -219,7 +271,6 @@ $heatmaps = array(
 				console.log('.layertoggle a[data-type=\''+hash+'\']');
 				$('.layertoggle a[data-type=\''+hash+'\']').addClass('active');
 				heatmap[hmids[hash]].setMap(map);
-				heatmap[hmids[hash]+1].setMap(map);
 				
 			}
 			
