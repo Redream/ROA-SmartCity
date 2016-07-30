@@ -2,7 +2,33 @@
 //ini_set('display_errors', 1);
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);
-
+function time_elapsed_string($ptime){
+    $etime = time() - $ptime;
+    if ($etime < 1){
+        return '0 seconds';
+    }
+    $a = array( 365 * 24 * 60 * 60  =>  'year',
+                 30 * 24 * 60 * 60  =>  'month',
+                      24 * 60 * 60  =>  'day',
+                           60 * 60  =>  'hour',
+                                60  =>  'minute',
+                                 1  =>  'second'
+                );
+    $a_plural = array( 'year'   => 'years',
+                       'month'  => 'months',
+                       'day'    => 'days',
+                       'hour'   => 'hours',
+                       'minute' => 'minutes',
+                       'second' => 'seconds'
+                );
+    foreach ($a as $secs => $str){
+        $d = $etime / $secs;
+        if ($d >= 1){
+            $r = round($d);
+            return $r . ' ' . ($r > 1 ? $a_plural[$str] : $str) . ' ago';
+        }
+    }
+}
 $sensor_csv = file_get_contents('../data/chch-sensors.csv');
 $slines = explode("\n",$sensor_csv);
 array_shift($slines);
@@ -28,7 +54,8 @@ foreach($slines as $line){
 		$parts[4],
 		$parts[5],
 		$parts[6],
-		$parts[7]
+		$parts[7],
+		time_elapsed_string(strtotime($parts[0]))
 	);
 }
 $kitemin = array();
@@ -119,13 +146,13 @@ $heatmaps = array(
 	),
 	'luminosity' => 
 	array(
-		'name'=>'Light Levels',
+		'name'=>'Luminosity',
 		'icon'=>'lightbulb-o',
 		'gradient' => genGradient('default')
 	),
 	'co2' => 
 	array(
-		'name'=>'CO2 Levels',
+		'name'=>'Carbon Dioxide',
 		'icon'=>'tree',
 		'gradient' => genGradient('default')
 	),
@@ -136,7 +163,12 @@ $heatmaps = array(
 		'gradient' => genGradient('default')
 	)
 );
-
+$idtohm = array();
+$i = 0;
+foreach($heatmaps as $k => $v){
+	$idtohm[$i] = $k;
+	$i++;
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -155,7 +187,7 @@ $heatmaps = array(
 			var heatmap;
 			var hmids;
 			var activehm;
-			
+			var infowindow;
 			function getFile(path, asynch, callback) {
 				var xhr = new XMLHttpRequest();
 				xhr.open("GET", path, asynch);
@@ -190,6 +222,7 @@ $heatmaps = array(
 				  mapTypeControl: false,
 				  streetViewControl: false
 				});
+				
 				heatmap = [
 				<?php 
 				$i = 0;
@@ -208,6 +241,34 @@ $heatmaps = array(
 				}
 				?>
 				];
+				markers = [
+				<?php 
+				  for($i=0;$i<count($heatmaps);$i++){
+					  echo '[';
+					  foreach($kitedata as $kite => $data){
+						  if($data[$i] == 0)continue;
+							 echo 'new google.maps.Marker({
+								   position: new google.maps.LatLng('.$kites[$kite]['lat'].', '.$kites[$kite]['long'].'),
+								   map: null,
+								   kite: "'.$kite.'",
+									title: "<small>'.$heatmaps[$idtohm[$i]]['name'].' ('.$data[6].'):</small><br/><b> '.$data[$i].'</b>",
+								 }),
+							';
+					  }
+					  echo '],';
+					 }
+				  ?>
+				];
+				infowindow = new google.maps.InfoWindow({
+				});
+				markers.forEach(function(item,index){
+					item.forEach(function(marker,index){
+						google.maps.event.addListener(marker, 'mouseover', function() {
+							infowindow.setContent(this.title);
+							infowindow.open(map, this);
+						});
+					});
+				});
 				hmids = {
 				<?php 
 				$i=0;
@@ -218,9 +279,9 @@ $heatmaps = array(
 				?>
 				};
 				
-				var legend = document.createElement('div');
-				legend.id = 'legend';
+				var legend = document.createElement('span');
 				var content = [];
+				content.push('<div id="title"><h1><b>SmartCity</b> Dashboard</h1></div><div id="legend">');
 				content.push('<div class="layertoggle">');
 				<?php
 				foreach($heatmaps as $key => $info){
@@ -228,15 +289,12 @@ $heatmaps = array(
 					echo "content.push('<a href=\"#{$key}\" data-type=\"{$key}\" {$active}><i class=\"fa fa-{$info[icon]} fa-2x\"></i>{$info[name]}</a>');\n";
 				}
 				?>
-				content.push('</div>');
+				content.push('</div></div>');
+				
 				legend.innerHTML = content.join('');
 				legend.index = 1;
-				map.controls[google.maps.ControlPosition.LEFT_CENTER].push(legend);
 				
-				var title = document.createElement('div');
-				title.id = 'title';
-				title.innerHTML = '<h1><b>SmartCity</b> Dashboard</h1>';
-				map.controls[google.maps.ControlPosition.LEFT_TOP].push(title);
+				map.controls[google.maps.ControlPosition.LEFT_TOP].push(legend);
 				window.location.hash = "";
 				$(window).on('hashchange', function(){
 					checkHash();
@@ -260,17 +318,29 @@ $heatmaps = array(
 			}
 			
 			function checkHash(){
-				console.log(window.location.hash+" !");
+				
 				//if(!window.location.hash)window.location.hash = "#temperature";
 				
 				var hash = window.location.hash.substring(1);
+				
+				if(hash == "")return;
 				heatmap.forEach(function(item, index){
 					item.setMap(null);
 				});
 				$('.layertoggle a').removeClass('active');
 				console.log('.layertoggle a[data-type=\''+hash+'\']');
 				$('.layertoggle a[data-type=\''+hash+'\']').addClass('active');
+				console.log(hmids[hash]);
+				console.log(heatmap);
 				heatmap[hmids[hash]].setMap(map);
+				markers.forEach(function(item, index){
+					item.forEach(function(marker, index){
+						marker.setMap(null);
+					});
+				});
+				markers[hmids[hash]].forEach(function(item, index){
+					item.setMap(map);
+				});
 				
 			}
 			
