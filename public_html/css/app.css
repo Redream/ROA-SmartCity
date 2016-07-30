@@ -1,0 +1,81 @@
+@font-face {
+    font-family: 'opensans';
+    src: url('/fonts/OpenSans-Regular-webfont.eot');
+    src: url('/fonts/OpenSans-Regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/fonts/OpenSans-Regular-webfont.woff') format('woff'),
+         url('/fonts/OpenSans-Regular-webfont.ttf') format('truetype'),
+         url('/fonts/OpenSans-Regular-webfont.svg#open_sansregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'opensans';
+    src: url('/fonts/OpenSans-Bold-webfont.eot');
+    src: url('/fonts/OpenSans-Bold-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/fonts/OpenSans-Bold-webfont.woff') format('woff'),
+         url('/fonts/OpenSans-Bold-webfont.ttf') format('truetype'),
+         url('/fonts/OpenSans-Bold-webfont.svg#open_sansregular') format('svg');
+    font-weight: bold;
+    font-style: normal;
+}
+
+html, body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	
+}
+
+body, .gm-style{
+	font-family: 'opensans' !important;
+}
+#map {
+	height: 100%;
+}
+
+#legend, #title{
+	border-radius:0px 6px 6px 0px;
+	border:2px solid #7ca5c7;
+	border-left:none;
+	background: #FFF;
+	margin: 5px 5px 5px 0px;
+}
+
+.layertoggle a{
+	display:block;
+	text-align:center;
+	text-decoration:none;
+	padding:15px;
+	color: #7ca5c7;
+	-o-transition:.2s;
+	-ms-transition:.2s;
+	-moz-transition:.2s;
+	-webkit-transition:.2s;
+	transition:.2s;
+}
+
+.fa{
+	float:left;
+	position:relative;
+	bottom:5px;
+	width:30px;
+}
+.layertoggle a:hover, .layertoggle a.active{
+	background:#7ca5c7;
+	color:#fff;
+}
+#legend {
+	font-size: 12px;
+	width: 200px;
+}
+#title{
+	padding: 0px;
+	margin-top:90px;
+    width: 300px;
+    text-align: center;
+    height: 64px;
+    color: #7ca5c7;
+}
+h1{
+	font-weight:normal;
+}
