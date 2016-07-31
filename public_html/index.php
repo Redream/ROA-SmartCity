@@ -179,15 +179,49 @@ foreach($heatmaps as $k => $v){
 		<link rel="stylesheet" href="/css/app.css" />
 		<link rel="stylesheet" href="/css/font-awesome.css" />
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+		<script src="scripts/angular.js"></script>
+		<script src="scripts/angular-resource.js"></script>
+		<script src="scripts/Peity.min.js"></script>
 	</head>
-	<body>
+	<body ng-controller="hackCtrl" >
 		<div id="map"></div>
-		<script type="text/javascript">
+		
+		
+	</body>
+	<script type="text/javascript">
 			var map;
 			var heatmap;
 			var hmids;
 			var activehm;
 			var infowindow;
+			
+			var allInfo = $resource("http://roa.redream.co.nz/json.php?kite=:kiteid&type=:typeid");
+
+			function getChart(kite, type) {
+				$scope.specific = allInfo.query({kiteid: kite, typeid: type}, chart(type));
+			}
+
+			function chart(type) {
+				for (var i = 0; i < $scope.specific.length; i++) {
+					Wait.push($scope.specific[i][type]);
+				}
+				$(".line").text(Wait);
+				$(".line").peity("line");
+			}
+
+			$.fn.peity.defaults.line = {
+				delimiter: ",",
+				fill: "#c6d9fd",
+				height: 160,
+				max: null,
+				min: 0,
+				stroke: "#4d89f9",
+				strokeWidth: 1,
+				width: 1135
+			}
+			
+			var Wait = [];
+
 			function getFile(path, asynch, callback) {
 				var xhr = new XMLHttpRequest();
 				xhr.open("GET", path, asynch);
@@ -251,7 +285,8 @@ foreach($heatmaps as $k => $v){
 								   position: new google.maps.LatLng('.$kites[$kite]['lat'].', '.$kites[$kite]['long'].'),
 								   map: null,
 								   kite: "'.$kite.'",
-									title: "<small>'.$heatmaps[$idtohm[$i]]['name'].' ('.$data[6].'):</small><br/><b> '.$data[$i].'</b>",
+								   type: "'.$idtohm[$i].'",
+									title: "<small>'.$heatmaps[$idtohm[$i]]['name'].' ('.$data[6].'):</small><br/><b> '.$data[$i].'</b><span class=\"line\"><img src=\"/img/loading.gif\"/></span> ",
 								 }),
 							';
 					  }
@@ -261,11 +296,13 @@ foreach($heatmaps as $k => $v){
 				];
 				infowindow = new google.maps.InfoWindow({
 				});
+				
 				markers.forEach(function(item,index){
 					item.forEach(function(marker,index){
 						google.maps.event.addListener(marker, 'mouseover', function() {
 							infowindow.setContent(this.title);
 							infowindow.open(map, this);
+							getChart(this.kite, this.type);
 						});
 					});
 				});
@@ -343,7 +380,5 @@ foreach($heatmaps as $k => $v){
 				});
 				
 			}
-			
 		</script>
-	</body>
 </html>
