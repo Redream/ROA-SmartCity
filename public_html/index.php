@@ -195,6 +195,16 @@ foreach($heatmaps as $k => $v){
 		<link rel="stylesheet" href="/css/font-awesome.css" />
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 		<script src="scripts/Peity.min.js"></script>
+		<script>
+		  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+		  ga('create', 'UA-17509155-20', 'auto');
+		  ga('send', 'pageview');
+
+		</script>
 	</head>
 	<body>
 		<div id="map"></div>
@@ -343,7 +353,7 @@ foreach($heatmaps as $k => $v){
 				
 				var legend = document.createElement('span');
 				var content = [];
-				content.push('<div id="title"><h1><b>SmartCity</b> Dashboard</h1></div><div id="legend">');
+				content.push('<div id="title"><h1><b>SmartCity</b> Dashboard</h1><small><a href="http://2016.hackerspace.govhack.org/content/smartcity-dashboard" style="text-decoration:none;margin-top:23px;display:block;">View project page</a></small></div><div id="legend">');
 				content.push('<div class="layertoggle">');
 				<?php
 				foreach($heatmaps as $key => $info){
