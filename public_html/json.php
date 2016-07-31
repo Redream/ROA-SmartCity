@@ -22,14 +22,10 @@ foreach($slines as $line){
 	$parts = explode(',',$line);
 	foreach($parts as $i => $part){
 		$parts[$i] = trim($part);
-		if($parts[$i] == -1){
-			$fail = true;
-			break;
-		}
 	}
-	if($fail || $parts[1] != $getkite)continue;
-	
-	$kitedata[] = array('time'=> strtotime($parts[0]),$gettype => $parts[$typeid[$gettype]]);
+	if($parts[1] != $getkite)continue;
+	$time = strtotime($parts[0]);
+	$kitedata[] = array('time'=> $time,$gettype => $parts[$typeid[$gettype]]);
 }
 echo json_encode($kitedata,true);
 ?>

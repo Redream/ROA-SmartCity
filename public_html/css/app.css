@@ -33,13 +33,45 @@ body, .gm-style{
 	height: 100%;
 }
 
-#legend, #title{
+#legend, #title, #toggleMarkers{
 	border-radius:0px 6px 6px 0px;
 	border:2px solid #7ca5c7;
 	border-left:none;
 	background: #FFF;
 	margin: 5px 5px 5px 0px;
 }
+#toggleMarkers:hover{
+	cursor:pointer;
+	background: #7ca5c7;
+	border-left:none;
+	color: #FFF;
+}
+
+#toggleMarkers{
+	font-size: 14px;
+	width: 130px;
+	text-align:center;
+	padding:10px 0px;
+	color: #7ca5c7;
+}
+
+.linemax, .linemin{
+	position: absolute;
+    right: 15px;
+    font-weight: bold;
+    font-size: 10px;
+	width:23px;
+	text-align:left;
+}
+
+.linemax{
+	top: 14px;
+}
+
+.linemin{
+	bottom: -2px;
+}
+
 
 .layertoggle a{
 	display:block;

@@ -55,7 +55,7 @@ foreach($slines as $line){
 		$parts[5],
 		$parts[6],
 		$parts[7],
-		time_elapsed_string(strtotime($parts[0]))
+		date("jS M",strtotime($parts[0])-86400*2).' - '.date("jS M",strtotime($parts[0]))
 	);
 }
 $kitemin = array();
@@ -99,9 +99,9 @@ function genGradient($type){
 		break;
 		case 'red':
 			return array(
-				'rgba(255,0,0,0)',
-				'rgba(255,0,0,1)',
-				'rgba(255,255,255,1)'
+				'rgba(255,255,255,0)',
+				'rgba(250,160,40,1)',
+				'rgba(255,0,0,1)'
 			);
 		break;
 		case 'blue':
@@ -171,6 +171,15 @@ foreach($heatmaps as $k => $v){
 }
 ?>
 <!DOCTYPE html>
+<!--
+  _______                     _____   ____          _ 
+ |__   __|                   |  __ \ / __ \   /\   | |
+    | | ___  __ _ _ __ ___   | |__) | |  | | /  \  | |
+    | |/ _ \/ _` | '_ ` _ \  |  _  /| |  | |/ /\ \ | |
+    | |  __/ (_| | | | | | | | | \ \| |__| / ____ \|_|
+    |_|\___|\__,_|_| |_| |_| |_|  \_\\____/_/    \_(_)
+                                                      
+                                                    -->
 <html>
 	<head>
 		<title>ROA SmartCity</title>
@@ -194,30 +203,44 @@ foreach($heatmaps as $k => $v){
 			var hmids;
 			var activehm;
 			var infowindow;
-			
-			var allInfo = $resource("http://roa.redream.co.nz/json.php?kite=:kiteid&type=:typeid");
+			var chartdata;
+			var wait = [];
+			var showMarkers = true;
 
 			function getChart(kite, type) {
-				$scope.specific = allInfo.query({kiteid: kite, typeid: type}, chart(type));
+				$.ajax({ 
+					type: 'GET', 
+					url: 'http://roa.redream.co.nz/json.php', 
+					data: { kite: kite, type: type }, 
+					dataType: 'json',
+					success: function (data) { 
+						chartdata = data;
+						chart(type);
+					}
+				});
 			}
 
 			function chart(type) {
-				for (var i = 0; i < $scope.specific.length; i++) {
-					Wait.push($scope.specific[i][type]);
+				Wait = []
+				var max = 0;
+				for (var i = 0; i < chartdata.length; i++) {
+					Wait.push(chartdata[i][type]);
+					max = Math.max(max, chartdata[i][type]);
 				}
 				$(".line").text(Wait);
+				$(".linemax").text(max);
 				$(".line").peity("line");
 			}
 
 			$.fn.peity.defaults.line = {
 				delimiter: ",",
 				fill: "#c6d9fd",
-				height: 160,
+				height: 40,
 				max: null,
-				min: 0,
+				min: 50,
 				stroke: "#4d89f9",
 				strokeWidth: 1,
-				width: 1135
+				width: 110
 			}
 			
 			var Wait = [];
@@ -265,7 +288,7 @@ foreach($heatmaps as $k => $v){
 					new google.maps.visualization.HeatmapLayer({
 					  data: getKitePoints(<?php echo $i; ?>),
 					  map: null,
-					  radius: 30,
+					  radius: 60,
 					  <?php if($hm['gradient']){ ?>
 					  gradient: ['<?php echo implode('\',\'',$hm['gradient']); ?>']
 					  <?php } ?>
@@ -286,7 +309,7 @@ foreach($heatmaps as $k => $v){
 								   map: null,
 								   kite: "'.$kite.'",
 								   type: "'.$idtohm[$i].'",
-									title: "<small>'.$heatmaps[$idtohm[$i]]['name'].' ('.$data[6].'):</small><br/><b> '.$data[$i].'</b><span class=\"line\"><img src=\"/img/loading.gif\"/></span> ",
+									title: "<small>'.$heatmaps[$idtohm[$i]]['name'].', '.$data[6].':</small><br/><div class=\"linemax\"> </div><div class=\"linemin\">0</div><span class=\"line\"><img src=\"/img/loading.gif\"/></span> ",
 								 }),
 							';
 					  }
@@ -327,7 +350,7 @@ foreach($heatmaps as $k => $v){
 				}
 				?>
 				content.push('</div></div>');
-				
+				content.push('<div id="toggleMarkers" onClick="toggleMarkers()" style="display:none;"><i class=\"fa fa-map-marker fa-2x\"></i><span id="toggletext">Hide markers</span></div>');
 				legend.innerHTML = content.join('');
 				legend.index = 1;
 				
@@ -337,6 +360,12 @@ foreach($heatmaps as $k => $v){
 					checkHash();
 				}).trigger('hashchange');
 				setTimeout(checkHash(),200);
+			}
+			function toggleMarkers(){
+				showMarkers = !showMarkers;
+				verb = (showMarkers ? 'Hide' : 'Show')
+				$('#toggletext').text(verb+" markers");
+				checkHash();
 			}
 			function getKitePoints(id) {
 			kiteweights = [
@@ -375,9 +404,12 @@ foreach($heatmaps as $k => $v){
 						marker.setMap(null);
 					});
 				});
-				markers[hmids[hash]].forEach(function(item, index){
-					item.setMap(map);
-				});
+				if(showMarkers){
+					markers[hmids[hash]].forEach(function(item, index){
+						item.setMap(map);
+					});
+				}
+				$('#toggleMarkers').show();
 				
 			}
 		</script>
