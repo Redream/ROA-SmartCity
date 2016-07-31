@@ -24,6 +24,9 @@ foreach($slines as $line){
 		$parts[$i] = trim($part);
 	}
 	if($parts[1] != $getkite)continue;
+	if($parts[$typeid[$gettype]] == -1){
+		$kitedata = array();
+	}
 	$time = strtotime($parts[0]);
 	$kitedata[] = array('time'=> $time,$gettype => $parts[$typeid[$gettype]]);
 }

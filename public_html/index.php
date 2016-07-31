@@ -34,7 +34,7 @@ $slines = explode("\n",$sensor_csv);
 array_shift($slines);
 $kites = array();
 $kitedata = array();
-
+$starts = array();
 foreach($slines as $line){
 	$fail = false;
 	if($line == '')continue;
@@ -46,7 +46,12 @@ foreach($slines as $line){
 			break;
 		}
 	}
-	if($fail)continue;
+
+	if($fail){
+		$kitedata[$parts[1]] = array();
+		$starts[$parts[1]] = strtotime($parts[0]);
+		continue;
+	}
 	
 	$kitedata[$parts[1]] = array(
 		$parts[2],
@@ -55,7 +60,8 @@ foreach($slines as $line){
 		$parts[5],
 		$parts[6],
 		$parts[7],
-		date("jS M",strtotime($parts[0])-86400*2).' - '.date("jS M",strtotime($parts[0]))
+		date("jS M",$starts[$parts[1]]).' - '.date("jS M",strtotime($parts[0])),
+		date("jS M h:i A",strtotime($parts[0]))
 	);
 }
 $kitemin = array();
@@ -182,20 +188,16 @@ foreach($heatmaps as $k => $v){
                                                     -->
 <html>
 	<head>
-		<title>ROA SmartCity</title>
+		<title>ROA SmartCity Dashboard</title>
 		<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
 		<meta charset="utf-8">
 		<link rel="stylesheet" href="/css/app.css" />
 		<link rel="stylesheet" href="/css/font-awesome.css" />
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-		<script src="scripts/angular.js"></script>
-		<script src="scripts/angular-resource.js"></script>
 		<script src="scripts/Peity.min.js"></script>
 	</head>
-	<body ng-controller="hackCtrl" >
+	<body>
 		<div id="map"></div>
-		
-		
 	</body>
 	<script type="text/javascript">
 			var map;
@@ -237,10 +239,10 @@ foreach($heatmaps as $k => $v){
 				fill: "#c6d9fd",
 				height: 40,
 				max: null,
-				min: 50,
+				min: 0,
 				stroke: "#4d89f9",
 				strokeWidth: 1,
-				width: 110
+				width: 160
 			}
 			
 			var Wait = [];
@@ -307,9 +309,9 @@ foreach($heatmaps as $k => $v){
 							 echo 'new google.maps.Marker({
 								   position: new google.maps.LatLng('.$kites[$kite]['lat'].', '.$kites[$kite]['long'].'),
 								   map: null,
-								   kite: "'.$kite.'",
+								   title: "'.$kite.'",
 								   type: "'.$idtohm[$i].'",
-									title: "<small>'.$heatmaps[$idtohm[$i]]['name'].', '.$data[6].':</small><br/><div class=\"linemax\"> </div><div class=\"linemin\">0</div><span class=\"line\"><img src=\"/img/loading.gif\"/></span> ",
+									html: "<small>'.$heatmaps[$idtohm[$i]]['name'].', '.$data[6].':<br/><div class=\"linemax\"> </div><div class=\"linemin\">0</div><span class=\"line\"><img src=\"/img/loading.gif\"/></span><br/>Latest reading: <b>'.$data[$i].'</b> at '.$data[7].' </small>",
 								 }),
 							';
 					  }
@@ -323,9 +325,9 @@ foreach($heatmaps as $k => $v){
 				markers.forEach(function(item,index){
 					item.forEach(function(marker,index){
 						google.maps.event.addListener(marker, 'mouseover', function() {
-							infowindow.setContent(this.title);
+							infowindow.setContent(this.html);
 							infowindow.open(map, this);
-							getChart(this.kite, this.type);
+							getChart(this.title, this.type);
 						});
 					});
 				});
