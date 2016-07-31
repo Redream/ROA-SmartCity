@@ -11,4 +11,5 @@ Hovering over each icon (representing a sensor) on the map will bring up a dialo
 The dashboard is a proof of concept and has huge potential to expand to become integrated with other data sources.
 
 http://2016.hackerspace.govhack.org/content/smartcity-dashboard
+
 http://roa.redream.co.nz/
